@@ -5,13 +5,14 @@ import numpy as np
 import io
 import zipfile
 import base64
+import os
 
 # Configuração da página
 st.set_page_config(page_title="Projeto Golfinho Rotador", page_icon="🐬", layout="centered")
 
-# --- CSS PARA DESIGN ---
+# --- CSS PARA DESIGN CENTRALIZADO ---
 def set_bg_and_style(image_file):
-    try:
+    if os.path.exists(image_file):
         with open(image_file, "rb") as f:
             img_data = base64.b64encode(f.read()).decode()
         st.markdown(f"""
@@ -22,26 +23,24 @@ def set_bg_and_style(image_file):
                 background-position: center;
                 background-attachment: fixed;
             }}
-            /* Container para alinhar logo e texto verticalmente */
             .header-container {{ display: flex; align-items: center; justify-content: center; gap: 20px; }}
             .main-title {{ color: white; font-size: 2.0em; margin: 0; }}
             .sub-title {{ text-align: center; color: #f0f0f0; margin-top: 10px; }}
             </style>
         """, unsafe_allow_html=True)
-    except:
-        pass
 
 set_bg_and_style("fundo.jpg")
 
-# --- CABEÇALHO COM LOGO AO LADO ---
+# --- CABEÇALHO ---
 st.markdown("<div class='header-container'>", unsafe_allow_html=True)
-st.image("logo.png", width=120)
+if os.path.exists("logo.png"):
+    st.image("logo.png", width=120)
 st.markdown("<h1 class='main-title'>Identificador de Mordidas de<br>Tubarão-Charuto em Golfinhos -<br>Fernando de Noronha</h1>", unsafe_allow_html=True)
 st.markdown("</div>", unsafe_allow_html=True)
 
 st.markdown("<h3 class='sub-title'>Analisador de imagens para atividades de pesquisa - Projeto Golfinho Rotador</h3>", unsafe_allow_html=True)
 
-# --- RESTO DO CÓDIGO (IA + ZIP) ---
+# --- IA ---
 @st.cache_resource
 def load_model():
     return tf.keras.models.load_model('modelo_tubarao_charuto.h5')
@@ -62,11 +61,14 @@ if arquivos_upload:
             img_array = np.expand_dims(np.array(imagem.resize((224, 224))), axis=0) / 255.0
             predicao = modelo.predict(img_array)[0][0]
             
+            # Cálculo da porcentagem de confiança
+            confianca = predicao if predicao > 0.5 else (1 - predicao)
+            
             if predicao > 0.5:
-                st.success("Resultado: Sem Mordida")
+                st.success(f"Resultado: Sem Mordida (Confiança: {confianca*100:.2f}%)")
                 pasta = "Sem_Mordida"
             else:
-                st.error("Resultado: ALERTA! Com Mordida")
+                st.error(f"Resultado: ALERTA! Com Mordida (Confiança: {confianca*100:.2f}%)")
                 pasta = "Com_Mordida"
             
             img_bytes = io.BytesIO()
