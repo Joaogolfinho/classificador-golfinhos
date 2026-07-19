@@ -15,7 +15,8 @@ def load_model():
 try:
     modelo = load_model()
 except Exception as e:
-    st.error("Modelo não encontrado.")
+    # Esta é a linha mágica que vai nos mostrar o verdadeiro problema:
+    st.error(f"Erro detalhado do sistema: {e}")
     st.stop()
 
 arquivos_upload = st.file_uploader("Escolha as imagens", type=["jpg", "jpeg", "png"], accept_multiple_files=True)
