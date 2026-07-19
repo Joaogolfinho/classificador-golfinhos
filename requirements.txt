@@ -1,5 +1,4 @@
-tensorflow-cpu==2.15.0
+tensorflow-cpu
 streamlit
 pillow
 numpy<2.0.0
-scipy
