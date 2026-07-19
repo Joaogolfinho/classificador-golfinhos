@@ -9,30 +9,35 @@ import base64
 # Configuração da página
 st.set_page_config(page_title="Projeto Golfinho Rotador", page_icon="🐬", layout="centered")
 
-# --- CSS PARA DESIGN CENTRALIZADO E FUNDO ---
+# --- CSS PARA DESIGN ---
+# Se o fundo .tif não carregar, o navegador pode estar bloqueando o formato.
+# Tente renomear o arquivo no GitHub para 'fundo.jpg' no futuro se este falhar.
 def set_bg_and_style(image_file):
-    with open(image_file, "rb") as f:
-        img_data = base64.b64encode(f.read()).decode()
-    st.markdown(f"""
-        <style>
-        .stApp {{
-            background: url(data:image/jpeg;base64,{img_data});
-            background-size: cover;
-        }}
-        .centered-title {{ text-align: center; color: white; }}
-        </style>
-    """, unsafe_allow_html=True)
+    try:
+        with open(image_file, "rb") as f:
+            img_data = base64.b64encode(f.read()).decode()
+        st.markdown(f"""
+            <style>
+            .stApp {{
+                background: linear-gradient(rgba(0,0,0,0.5), rgba(0,0,0,0.5)), url(data:image/jpeg;base64,{img_data});
+                background-size: cover;
+                background-position: center;
+            }}
+            .centered-title {{ text-align: center; color: white; margin-bottom: 20px; }}
+            </style>
+        """, unsafe_allow_html=True)
+    except:
+        pass
 
-# Aplica o fundo com o nome exato do seu arquivo
 set_bg_and_style("fundo.jpg.tif")
 
 # --- CABEÇALHO CENTRALIZADO ---
-col_logo, col_titulo = st.columns([1, 4])
+# Aumentei a proporção da coluna da logo para ela ficar maior (2 em vez de 1)
+col_logo, col_titulo = st.columns([2, 5])
 with col_logo:
-    # Ajustado para o nome exato da logo
-    st.image("fundo.png.png", width=100)
+    st.image("fundo.png.png", width=200) # Logo ampliada
 with col_titulo:
-    st.markdown("<h1 class='centered-title'>Identificador de Mordidas de Tubarão-Charuto em Golfinhos e Tartarugas - Fernando de Noronha</h1>", unsafe_allow_html=True)
+    st.markdown("<h1 class='centered-title'>Identificador de Mordidas de Tubarão-Charuto em Golfinhos - Fernando de Noronha</h1>", unsafe_allow_html=True)
 
 st.markdown("<h3 class='centered-title'>Analisador de imagens para atividades de pesquisa - Projeto Golfinho Rotador</h3>", unsafe_allow_html=True)
 
@@ -54,7 +59,6 @@ if arquivos_upload:
         for arquivo in arquivos_upload:
             st.markdown("---")
             imagem = Image.open(arquivo)
-            # Exibe imagem centralizada
             st.image(imagem, width=300)
             
             img_array = np.expand_dims(np.array(imagem.resize((224, 224))), axis=0) / 255.0
