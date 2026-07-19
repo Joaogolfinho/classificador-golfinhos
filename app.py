@@ -9,7 +9,7 @@ import base64
 # Configuração da página
 st.set_page_config(page_title="Projeto Golfinho Rotador", page_icon="🐬", layout="centered")
 
-# --- CSS PARA DESIGN CENTRALIZADO ---
+# --- CSS PARA DESIGN ---
 def set_bg_and_style(image_file):
     try:
         with open(image_file, "rb") as f:
@@ -22,26 +22,26 @@ def set_bg_and_style(image_file):
                 background-position: center;
                 background-attachment: fixed;
             }}
-            .main-title {{ text-align: center; color: white; font-size: 2.5em; }}
-            .sub-title {{ text-align: center; color: #f0f0f0; }}
-            .logo-container {{ display: flex; justify-content: center; margin-bottom: 10px; }}
+            /* Container para alinhar logo e texto verticalmente */
+            .header-container {{ display: flex; align-items: center; justify-content: center; gap: 20px; }}
+            .main-title {{ color: white; font-size: 2.0em; margin: 0; }}
+            .sub-title {{ text-align: center; color: #f0f0f0; margin-top: 10px; }}
             </style>
         """, unsafe_allow_html=True)
     except:
         pass
 
-# Nome do seu arquivo de fundo atualizado para .jpg
 set_bg_and_style("fundo.jpg")
 
-# --- CABEÇALHO CENTRALIZADO (Logo em cima, texto abaixo) ---
-st.markdown("<div class='logo-container'>", unsafe_allow_html=True)
-st.image("fundo.png.png", width=180) # Ajuste este valor se quiser maior ou menor
+# --- CABEÇALHO COM LOGO AO LADO ---
+st.markdown("<div class='header-container'>", unsafe_allow_html=True)
+st.image("logo.png", width=120)
+st.markdown("<h1 class='main-title'>Identificador de Mordidas de<br>Tubarão-Charuto em Golfinhos -<br>Fernando de Noronha</h1>", unsafe_allow_html=True)
 st.markdown("</div>", unsafe_allow_html=True)
 
-st.markdown("<h1 class='main-title'>Identificador de Mordidas de Tubarão-Charuto em Golfinhos - Fernando de Noronha</h1>", unsafe_allow_html=True)
 st.markdown("<h3 class='sub-title'>Analisador de imagens para atividades de pesquisa - Projeto Golfinho Rotador</h3>", unsafe_allow_html=True)
 
-# --- RESTO DO CÓDIGO ---
+# --- RESTO DO CÓDIGO (IA + ZIP) ---
 @st.cache_resource
 def load_model():
     return tf.keras.models.load_model('modelo_tubarao_charuto.h5')
