@@ -7,10 +7,8 @@ import zipfile
 import base64
 import os
 
-# Configuração da página
 st.set_page_config(page_title="Projeto Golfinho Rotador", page_icon="🐬", layout="centered")
 
-# --- CSS PARA DESIGN CENTRALIZADO ---
 def set_bg_and_style(image_file):
     if os.path.exists(image_file):
         with open(image_file, "rb") as f:
@@ -31,7 +29,6 @@ def set_bg_and_style(image_file):
 
 set_bg_and_style("fundo.jpg")
 
-# --- CABEÇALHO ---
 st.markdown("<div class='header-container'>", unsafe_allow_html=True)
 if os.path.exists("logo.png"):
     st.image("logo.png", width=120)
@@ -40,7 +37,6 @@ st.markdown("</div>", unsafe_allow_html=True)
 
 st.markdown("<h3 class='sub-title'>Analisador de imagens para atividades de pesquisa - Projeto Golfinho Rotador</h3>", unsafe_allow_html=True)
 
-# --- IA ---
 @st.cache_resource
 def load_model():
     return tf.keras.models.load_model('modelo_tubarao_charuto.h5')
@@ -55,13 +51,15 @@ if arquivos_upload:
     with zipfile.ZipFile(zip_buffer, "w") as zip_file:
         for arquivo in arquivos_upload:
             st.markdown("---")
-            imagem = Image.open(arquivo)
+            imagem = Image.open(arquivo).convert("RGB") # FORÇA a imagem a ser RGB (3 canais)
             st.image(imagem, width=300)
             
-            img_array = np.expand_dims(np.array(imagem.resize((224, 224))), axis=0) / 255.0
-            predicao = modelo.predict(img_array)[0][0]
+            # Redimensiona e normaliza
+            img_redimensionada = imagem.resize((224, 224))
+            img_array = np.expand_dims(np.array(img_redimensionada), axis=0) / 255.0
             
-            # Cálculo da porcentagem de confiança
+            # Predição
+            predicao = modelo.predict(img_array)[0][0]
             confianca = predicao if predicao > 0.5 else (1 - predicao)
             
             if predicao > 0.5:
