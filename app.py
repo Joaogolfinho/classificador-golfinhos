@@ -9,9 +9,7 @@ import base64
 # Configuração da página
 st.set_page_config(page_title="Projeto Golfinho Rotador", page_icon="🐬", layout="centered")
 
-# --- CSS PARA DESIGN ---
-# Se o fundo .tif não carregar, o navegador pode estar bloqueando o formato.
-# Tente renomear o arquivo no GitHub para 'fundo.jpg' no futuro se este falhar.
+# --- CSS PARA DESIGN CENTRALIZADO ---
 def set_bg_and_style(image_file):
     try:
         with open(image_file, "rb") as f:
@@ -19,29 +17,32 @@ def set_bg_and_style(image_file):
         st.markdown(f"""
             <style>
             .stApp {{
-                background: linear-gradient(rgba(0,0,0,0.5), rgba(0,0,0,0.5)), url(data:image/jpeg;base64,{img_data});
+                background: linear-gradient(rgba(0,0,0,0.6), rgba(0,0,0,0.6)), url(data:image/jpeg;base64,{img_data});
                 background-size: cover;
                 background-position: center;
+                background-attachment: fixed;
             }}
-            .centered-title {{ text-align: center; color: white; margin-bottom: 20px; }}
+            .main-title {{ text-align: center; color: white; font-size: 2.2em; }}
+            .sub-title {{ text-align: center; color: #f0f0f0; }}
+            .logo-container {{ display: flex; justify-content: center; margin-bottom: 20px; }}
             </style>
         """, unsafe_allow_html=True)
-    except:
-        pass
+    except Exception as e:
+        st.warning(f"Erro ao carregar fundo: {e}")
 
-set_bg_and_style("fundo.jpg.tif")
+# Nome do arquivo de fundo simplificado
+set_bg_and_style("fundo.jpg")
 
 # --- CABEÇALHO CENTRALIZADO ---
-# Aumentei a proporção da coluna da logo para ela ficar maior (2 em vez de 1)
-col_logo, col_titulo = st.columns([2, 5])
-with col_logo:
-    st.image("fundo.png.png", width=200) # Logo ampliada
-with col_titulo:
-    st.markdown("<h1 class='centered-title'>Identificador de Mordidas de Tubarão-Charuto em Golfinhos - Fernando de Noronha</h1>", unsafe_allow_html=True)
+st.markdown("<div class='logo-container'>", unsafe_allow_html=True)
+# Nome do arquivo da logo simplificado
+st.image("logo.png", width=180)
+st.markdown("</div>", unsafe_allow_html=True)
 
-st.markdown("<h3 class='centered-title'>Analisador de imagens para atividades de pesquisa - Projeto Golfinho Rotador</h3>", unsafe_allow_html=True)
+st.markdown("<h1 class='main-title'>Identificador de Mordidas de Tubarão-Charuto em Golfinhos - Fernando de Noronha</h1>", unsafe_allow_html=True)
+st.markdown("<h3 class='sub-title'>Analisador de imagens para atividades de pesquisa - Projeto Golfinho Rotador</h3>", unsafe_allow_html=True)
 
-# --- RESTO DO CÓDIGO (IA + ZIP) ---
+# --- RESTO DO CÓDIGO ---
 @st.cache_resource
 def load_model():
     return tf.keras.models.load_model('modelo_tubarao_charuto.h5')
@@ -52,9 +53,7 @@ st.markdown("---")
 arquivos_upload = st.file_uploader("Escolha as fotos para análise", type=["jpg", "jpeg", "png"], accept_multiple_files=True)
 
 if arquivos_upload:
-    st.info(f"Processando {len(arquivos_upload)} imagens...")
     zip_buffer = io.BytesIO()
-    
     with zipfile.ZipFile(zip_buffer, "w") as zip_file:
         for arquivo in arquivos_upload:
             st.markdown("---")
@@ -65,10 +64,10 @@ if arquivos_upload:
             predicao = modelo.predict(img_array)[0][0]
             
             if predicao > 0.5:
-                st.success(f"Resultado: Sem Mordida")
+                st.success("Resultado: Sem Mordida")
                 pasta = "Sem_Mordida"
             else:
-                st.error(f"Resultado: ALERTA! Com Mordida")
+                st.error("Resultado: ALERTA! Com Mordida")
                 pasta = "Com_Mordida"
             
             img_bytes = io.BytesIO()
