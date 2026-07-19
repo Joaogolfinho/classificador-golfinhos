@@ -9,6 +9,7 @@ import os
 
 st.set_page_config(page_title="Projeto Golfinho Rotador", page_icon="🐬", layout="centered")
 
+# --- CSS E ESTILOS ---
 def set_bg_and_style(image_file):
     if os.path.exists(image_file):
         with open(image_file, "rb") as f:
@@ -29,14 +30,15 @@ def set_bg_and_style(image_file):
 
 set_bg_and_style("fundo.jpg")
 
+# Cabeçalho
 st.markdown("<div class='header-container'>", unsafe_allow_html=True)
 if os.path.exists("logo.png"):
     st.image("logo.png", width=120)
 st.markdown("<h1 class='main-title'>Identificador de Mordidas de<br>Tubarão-Charuto em Golfinhos -<br>Fernando de Noronha</h1>", unsafe_allow_html=True)
 st.markdown("</div>", unsafe_allow_html=True)
+st.markdown("<h3 class='sub-title'>Analisador de imagens para pesquisa - Projeto Golfinho Rotador</h3>", unsafe_allow_html=True)
 
-st.markdown("<h3 class='sub-title'>Analisador de imagens para atividades de pesquisa - Projeto Golfinho Rotador</h3>", unsafe_allow_html=True)
-
+# --- IA ---
 @st.cache_resource
 def load_model():
     return tf.keras.models.load_model('modelo_tubarao_charuto.h5')
@@ -51,22 +53,24 @@ if arquivos_upload:
     with zipfile.ZipFile(zip_buffer, "w") as zip_file:
         for arquivo in arquivos_upload:
             st.markdown("---")
-            imagem = Image.open(arquivo).convert("RGB") # FORÇA a imagem a ser RGB (3 canais)
+            imagem = Image.open(arquivo).convert("RGB")
             st.image(imagem, width=300)
             
-            # Redimensiona e normaliza
-            img_redimensionada = imagem.resize((224, 224))
-            img_array = np.expand_dims(np.array(img_redimensionada), axis=0) / 255.0
-            
-            # Predição
+            img_array = np.expand_dims(np.array(imagem.resize((224, 224))), axis=0) / 255.0
             predicao = modelo.predict(img_array)[0][0]
+            
+            # Cálculo da confiança
             confianca = predicao if predicao > 0.5 else (1 - predicao)
             
-            if predicao > 0.5:
-                st.success(f"Resultado: Sem Mordida (Confiança: {confianca*100:.2f}%)")
+            # Lógica de Classificação
+            if confianca < 0.80:
+                st.warning(f"⚠️ Não tenho certeza (Confiança: {confianca*100:.2f}%)")
+                pasta = "Nao_Tenho_Certeza"
+            elif predicao > 0.5:
+                st.success(f"✅ Sem Mordida (Confiança: {confianca*100:.2f}%)")
                 pasta = "Sem_Mordida"
             else:
-                st.error(f"Resultado: ALERTA! Com Mordida (Confiança: {confianca*100:.2f}%)")
+                st.error(f"❌ Com Mordida (Confiança: {confianca*100:.2f}%)")
                 pasta = "Com_Mordida"
             
             img_bytes = io.BytesIO()
