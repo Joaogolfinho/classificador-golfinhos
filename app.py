@@ -22,21 +22,20 @@ def set_bg_and_style(image_file):
                 background-position: center;
                 background-attachment: fixed;
             }}
-            .main-title {{ text-align: center; color: white; font-size: 2.2em; }}
+            .main-title {{ text-align: center; color: white; font-size: 2.5em; }}
             .sub-title {{ text-align: center; color: #f0f0f0; }}
-            .logo-container {{ display: flex; justify-content: center; margin-bottom: 20px; }}
+            .logo-container {{ display: flex; justify-content: center; margin-bottom: 10px; }}
             </style>
         """, unsafe_allow_html=True)
-    except Exception as e:
-        st.warning(f"Erro ao carregar fundo: {e}")
+    except:
+        pass
 
-# Nome do arquivo de fundo simplificado
+# Nome do seu arquivo de fundo atualizado para .jpg
 set_bg_and_style("fundo.jpg")
 
-# --- CABEÇALHO CENTRALIZADO ---
+# --- CABEÇALHO CENTRALIZADO (Logo em cima, texto abaixo) ---
 st.markdown("<div class='logo-container'>", unsafe_allow_html=True)
-# Nome do arquivo da logo simplificado
-st.image("logo.png", width=180)
+st.image("fundo.png.png", width=180) # Ajuste este valor se quiser maior ou menor
 st.markdown("</div>", unsafe_allow_html=True)
 
 st.markdown("<h1 class='main-title'>Identificador de Mordidas de Tubarão-Charuto em Golfinhos - Fernando de Noronha</h1>", unsafe_allow_html=True)
