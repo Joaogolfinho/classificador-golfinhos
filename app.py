@@ -4,7 +4,7 @@ from PIL import Image
 import numpy as np
 import io
 import json
-import time  # <--- Adicionamos esta biblioteca para controlar o tempo
+import time
 from google.oauth2 import service_account
 from googleapiclient.discovery import build
 from googleapiclient.http import MediaIoBaseUpload
@@ -12,70 +12,55 @@ from googleapiclient.http import MediaIoBaseUpload
 st.set_page_config(page_title="Classificador de Golfinhos", page_icon="🐬")
 
 st.title("🐬 Identificador de Mordidas de Tubarão-Charuto")
-st.write("Processando suas imagens...")
 
+# ID da pasta fixa
 ID_PASTA_PRINCIPAL = "1duAog6h9zZPi6kC9_SLEyVBDK-counWz"
 
-@st.cache_resource
-def conectar_drive():
+def get_drive_service():
+    # Cria uma nova conexão a cada chamada para evitar erros de sessão
     credenciais_dict = json.loads(st.secrets["google_credentials"])
     creds = service_account.Credentials.from_service_account_info(
         credenciais_dict, scopes=['https://www.googleapis.com/auth/drive']
     )
     return build('drive', 'v3', credentials=creds)
 
-def criar_ou_obter_pasta(nome_pasta, id_pai, servico):
-    query = f"name='{nome_pasta}' and '{id_pai}' in parents and mimeType='application/vnd.google-apps.folder' and trashed=false"
-    resultados = servico.files().list(q=query, spaces='drive', fields='files(id, name)').execute()
-    pastas = resultados.get('files', [])
-    if pastas: return pastas[0].get('id')
-    metadata = {'name': nome_pasta, 'mimeType': 'application/vnd.google-apps.folder', 'parents': [id_pai]}
-    pasta = servico.files().create(body=metadata, fields='id').execute()
-    return pasta.get('id')
-
-def subir_para_drive(imagem, nome_arquivo, id_pasta_destino, servico):
-    img_bytes = io.BytesIO()
-    formato = imagem.format if imagem.format else "JPEG"
-    imagem.save(img_bytes, format=formato)
-    img_bytes.seek(0)
-    media = MediaIoBaseUpload(img_bytes, mimetype=f'image/{formato.lower()}', resumable=True)
-    metadata = {'name': nome_arquivo, 'parents': [id_pasta_destino]}
-    servico.files().create(body=metadata, media_body=media, fields='id').execute()
-
 @st.cache_resource
 def load_model():
     return tf.keras.models.load_model('modelo_tubarao_charuto.h5')
 
-try:
-    modelo = load_model()
-    servico_drive = conectar_drive()
-except Exception as e:
-    st.error(f"Erro: {e}")
-    st.stop()
+modelo = load_model()
 
 arquivos_upload = st.file_uploader("Escolha as imagens", type=["jpg", "jpeg", "png"], accept_multiple_files=True)
 
 if arquivos_upload:
-    id_pasta_sem_mordida = criar_ou_obter_pasta("Sem_Mordida", ID_PASTA_PRINCIPAL, servico_drive)
-    id_pasta_com_mordida = criar_ou_obter_pasta("Com_Mordida", ID_PASTA_PRINCIPAL, servico_drive)
-    
-    for arquivo in arquivos_upload:
-        st.markdown("---")
-        imagem = Image.open(arquivo)
-        st.image(imagem, caption=f'Analisando: {arquivo.name}', use_container_width=True)
+    if st.button("Processar e enviar para o Drive"):
+        servico = get_drive_service()
         
-        img_redimensionada = imagem.resize((224, 224))
-        img_array = np.expand_dims(np.array(img_redimensionada), axis=0) / 255.0
+        # Cria pastas apenas uma vez
+        for nome_pasta in ["Sem_Mordida", "Com_Mordida"]:
+            query = f"name='{nome_pasta}' and '{ID_PASTA_PRINCIPAL}' in parents and trashed=false"
+            res = servico.files().list(q=query).execute().get('files', [])
+            if not res:
+                servico.files().create(body={'name': nome_pasta, 'mimeType': 'application/vnd.google-apps.folder', 'parents': [ID_PASTA_PRINCIPAL]}).execute()
         
-        predicao = modelo.predict(img_array)[0][0]
-        
-        if predicao > 0.5:
-            st.success("Resultado: Sem Mordida.")
-            subir_para_drive(imagem, arquivo.name, id_pasta_sem_mordida, servico_drive)
-        else:
-            st.error("Resultado: Com Mordida.")
-            subir_para_drive(imagem, arquivo.name, id_pasta_com_mordida, servico_drive)
-        
-        time.sleep(1.5) # <--- O segredo: espera 1,5 segundos antes da próxima foto
+        for arquivo in arquivos_upload:
+            st.write(f"Processando: {arquivo.name}")
+            imagem = Image.open(arquivo)
+            img_array = np.expand_dims(np.array(imagem.resize((224, 224))), axis=0) / 255.0
+            predicao = modelo.predict(img_array)[0][0]
             
-    st.success("✅ Todas as imagens foram processadas com sucesso!")
+            nome_pasta = "Sem_Mordida" if predicao > 0.5 else "Com_Mordida"
+            id_pasta = servico.files().list(q=f"name='{nome_pasta}' and '{ID_PASTA_PRINCIPAL}' in parents").execute().get('files')[0]['id']
+            
+            # Subir arquivo
+            img_bytes = io.BytesIO()
+            imagem.save(img_bytes, format="JPEG")
+            img_bytes.seek(0)
+            
+            media = MediaIoBaseUpload(img_bytes, mimetype='image/jpeg')
+            servico.files().create(body={'name': arquivo.name, 'parents': [id_pasta]}, media_body=media).execute()
+            
+            st.write(f"✅ {arquivo.name} enviado para {nome_pasta}")
+            time.sleep(2) # Pausa maior para garantir estabilidade
+            
+        st.success("Todas as imagens processadas!")
